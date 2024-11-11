@@ -1,0 +1,285 @@
+(begin
+  
+(define (read-file)
+  (let ((expr (read)))
+    (if (eof-object? expr)
+        '()
+        (cons expr (read-file)))))
+
+(define data (with-input-from-file "dist2.dat" read-file))
+
+(define (insert! key-1 key-2 value table)
+  (let ((subtable (assoc key-1 (cdr table))))
+    (if subtable
+        (let ((record (assoc key-2 (cdr subtable))))
+          (if record
+              (set-cdr! record value)
+              (set-cdr! subtable
+                        (cons (cons key-2 value)
+                              (cdr subtable)))))
+        (set-cdr! table
+                  (cons (list key-1
+                              (cons key-2 value))
+                        (cdr table)))))
+  'ok)
+
+(define (lookup key-1 key-2 table)
+  (let ((subtable (assoc key-1 (cdr table))))
+    (if subtable
+        (let ((record (assoc key-2 (cdr subtable))))
+          (if record
+              (cdr record)
+              #f))
+        #f)))
+#|
+; you need to make your own table;
+(define (make-table)
+  (list 'table))
+
+(define my-table (make-table))
+(define data-table (make-table))
+
+; if you get this done, I think I will be ok. 
+(define (insert-helper2 x)
+(define (innard a b c)
+  (insert! a b c my-table))
+  (innard (car x) (cadr x) (caddr x)))
+
+; call this insert and make it more confusing
+(define (mapper fn lst) ; change the parameter names
+  (if (null? lst)  ;turn into a condition
+      '() ; maybe you should leave as an empty list
+      (cons (fn (car lst))
+            (mapper fn (cdr lst)))))
+
+(mapper insert-helper2 data)
+
+|#
+
+; could easily change the lines of code below. 
+(define node-node-2d (list '*table*))
+(map (lambda (x) (insert! (car x) (cadr x) (caddr x) node-node-2d)) data)
+
+(display node-node-2d)
+(newline)
+
+(define rv (list '*table*))
+(map (lambda (x) (insert! (car x) (caddr x) (cadr x) rv)) data)
+;**************************************************************************************************************************
+; what about this one, looks a little complex.
+; keep around for the heck of it.
+; order of trversal does not matter I think. 
+(define (findchildren node source list)
+    (cond ((null? source) list)
+          ((equal? (caar source) node)
+                 (findchildren node (cdr source) (cons (cadar source) list)))
+           (else (findchildren node (cdr source) list))))
+
+
+; can't you simply assoc here? Like in hw 3
+; only displays 1 need all the children. 
+;(display (assoc 'start (cdr data))) ; so recursion on data
+(newline)
+; works but I need to remove duplicates and
+; return return only second element (children)
+; from list.
+; so remove duplicates and booleans, reverese list, (greater value goes first (p2 p1))
+; and then only retrieve the second element in each list (p2 p1).
+; this could be done last. 
+(define (children node data)
+  (cond ((null? data) '())                                            
+        (else (cons (assoc node data) (children node (cdr data))))))
+
+; would have to end up changing this. Not that bad.
+;https://stackoverflow.com/questions/8382296/scheme-remove-duplicated-numbers-from-list
+(define (remove-duplicates l)
+  (cond ((null? l)
+         '())
+        ((memq (car l) (cdr l)) ;changed to memq
+         (remove-duplicates (cdr l)))
+        (else
+         (cons (car l) (remove-duplicates (cdr l))))))
+
+; below is my attempt at getting the children. 
+;(display (remove-duplicates (children 'p2 data))) ; good
+; filter further by removing #f. Then reverese list. Then retrieve
+; the second element of each list. 
+
+; you could work with above.
+; you could use assoc to helo you check as well
+(newline)
+;(display (assoc 'p3 data)) ; could do like and end check. 
+
+  
+(newline)
+;********************************************************************************************************************************************************
+; need to return (p1 p2)
+; so return 
+ ;----------------------------------------------------------------
+
+
+;;these 2 return table of children
+;; and list of children
+; from textbook page 268 - no change -
+; keep the original function name?
+(define (lookup_key key table)
+  (let ((record (assoc key (cdr table))))
+    (if record
+        (cdr record)
+        '())))
+
+; remember that you can look up the cost. 
+; *can you call naive path twice in here?
+; would that mess up the program?
+; trav stands for traverse.
+
+; the most important part now
+; is to know where to add anything up
+(define (trav node children)
+; could you create some sort of list here
+; with append if this works at all
+ (display "trav node: ")
+ (display node)
+  (newline)
+ (display "children node trav: ")
+ ;(display node)
+ (display children)
+ (newline) 
+  ; so maybe the end does take importance.
+  ; because you do calculate the end in the
+
+
+ 
+  
+ (cond ((null? children) 100000) ; what does this do at all?
+      ((eq? children 'end))((lookup node 'end  node-node-2d)) ; so don't put end here. it takes precedence. 
+       ;((naive-path (car children))(trav node (cdr children))))
+       ; * test now adding the value of the node with only
+       ; ONE of ITS CHILDREN. USE ELSE - run different versions of ELSE
+       ; and write what it returns here and notebook. 
+
+        ; OK this gets me 29 - passing back to naive path helps somewhat. (s - )
+       ;(else (+ (lookup node (car children) node-node-2d) (naive-path (cadr children)))))       
+       ; OK this gets me 18 - passing back to naive path helps somewhat. (s - p2.7 - end.11)
+       ;(else (+ (lookup node (car children) node-node-2d) (naive-path (car children)))))
+       ; 10007 - but the one is not added from p3, what gives?
+       (+ (lookup node (car children) node-node-2d) (naive-path (car children))) (trav node (cdr children)))
+)
+
+; might not work on UMB Scheme
+(define m-min
+  (lambda (l)
+    (cond
+      ((null? l) '())
+      ((null? (cdr l)) (car l))
+      ;((eq? l #f) '())
+      (#t (let ((a (car l))
+                (b (m-min (cdr l))))
+            (if (< b a) b a))))))
+
+(define (override-val node child)
+
+  ; checking to see if the children does have children
+  ; if it does not, then the value in table will be changed
+  ; to 1 million.
+  (let ((children (findchildren child data '())))  
+
+    ; ok change the value of the p3,
+    ; I think this is doable.
+
+    (if (and (not (eq? child 'end)) (eq? children '()))
+        (insert! node child 100000000 node-node-2d))
+    
+    (display "inside the override: ")
+    (display child)
+    (display " children; ")
+    (display children)
+    (newline)
+    
+
+  ))
+
+; helper function to test if children is not null?
+(define (child-check node children)
+  ; but how come 'p2 children are not being shown?
+  ;get it to display something first.
+  ;(newline)
+  (if (null? children)
+      '()
+      (begin ; could be helpful
+      ;(display (car children)) ; so send to another function.
+        (override-val node (car children))
+      (newline)))
+  ;(newline)
+
+  ;(display children)
+  )
+
+(define (cost node children)
+
+  (child-check node children)
+
+  ;(display children)
+ 
+  ; this is still one of the trickiest crap to do here. 
+  (cond ((eq? children '()) '()) ; maybe ok?
+        ((eq? children 'end) '())
+        (else (cons (lookup node (car children) node-node-2d) (cost node (cdr children)))))        
+  )
+
+; so how do you add anything here? that is the question. 
+(define (naive-path node)
+   
+(display "Node: ")
+(display node)
+(newline)
+
+(let ((children (findchildren node data '())))  
+  (display "displaying the children: ")
+  (display children)
+  (newline )
+  ;(m-min (get-val node children))
+
+  ; so how do you traverse the whole graph?
+  ; you still need to address that
+  ; the get-val only returns the numerical
+  ; value, and not the minimum node.
+  ; how does the code know how to continue? 
+  (let ((lister (cost node children)))
+
+    (display lister)
+
+    ;(m-min lister)
+
+    ; maybe have a reverse table that you could lookup with
+    ; value. That could help a lot. lookup 'start 3 - return p1.
+    
+    ; you do need recursion here, so that is something to keep in mind.
+    ; maybe my solution will not be able to 'halt'.
+    ; you do need a helper function to call back the naive-path.
+    ; so my solution migh not be possible because it will not be able
+    ; to halt.
+    (newline)
+   ; (display (lookup 'p3 ' node-node-2d)) 
+    (newline)
+    
+    ; this will help stop the recursion I think when you hit
+    ; either end or a node that has no more children. You will need
+    ; to adjust.
+
+    ; change the value of 'p3 just to check if it can be done
+   ; (insert! 'p2 'p3 1000000 node-node-2d) ; you can override table values. 
+    
+    (if (eq? node 'end) ; and you need to create proper condition to halt program. 
+         0
+
+         ; eventually this will be need to be done recursively
+         ; with the help of the reverse table
+     (+ (m-min lister) (naive-path (lookup node (m-min lister) rv)))
+))))
+
+;(newline)
+;(display my-table)
+;(newline)
+(naive-path 'start)
+)
