@@ -1,0 +1,18 @@
+
+1.  Define a function
+
+    (display-n stream n)
+
+    that prints the first n elements of stream, each on a separate line.
+   
+2.  Exercise 3.50 (page 324)
+
+    This exercise is pretty simple, provided you follow the suggestion in the book. In fact, you can forget about checking for the empty stream—we will only use this procedure for infinite streams.
+   
+3.  As explained in section 3.5.2, we can define an infinite stream of ones and use this to define the stream of positive integers:
+
+    (define ones (cons-stream 1 ones))
+
+    (define integers (cons-stream 1 (add-streams ones integers)))
+
+    Type in these definitions and verify that they work by using the display-n procedure. Generate the stream notdiv-235 of all integers that are not divisible by any of the numbers 2, 3, or 5. (Use stream-filter.)

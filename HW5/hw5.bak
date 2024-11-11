@@ -1,0 +1,190 @@
+; good link below
+; https://berkeley-cs61as.github.io/textbook/streams-are-delayed-lists.html
+; https://courses.cs.washington.edu/courses/cse341/98sp/scheme/recursion.html
+
+; what to do with the PROMISE?
+; https://stackoverflow.com/questions/5610480/scheme-sicp-r5rs-why-is-delay-not-a-special-form
+(define stream-car car)
+(define (stream-cdr stream) (force (cdr stream)))
+(define stream-null? null?)
+(define the-empty-stream '())
+
+(define (stream-foreach f x)
+  (if (stream-null? x)
+      'done
+      (begin (f (stream-car x))
+             (stream-foreach f (stream-cdr x)))))
+
+(define (stream-filter pred stream)
+  (cond ((stream-null? stream) the-empty-stream)
+        ((pred (stream-car stream))
+         (cons-stream (stream-car stream)
+                      (stream-filter pred (stream-cdr stream))))
+        (else (stream-filter pred (stream-cdr stream)))))
+
+; defining cons-stream here
+(define-syntax cons-stream
+  (syntax-rules ()
+    ((cons-stream x y)
+     (cons x (delay y)))))
+
+;CHECK FOR SIMILARITY - its part of PART 1
+; This will be used to display the stream upto a certain point n 
+(define (display-n stream n)
+  (cond ((<= n 0) '())
+        ((stream-null? stream) '())
+        ((= n 1) (display (stream-car stream)))
+        (else (display (stream-car stream))
+              (newline)
+              (display-n (stream-cdr stream) (- n 1)))))
+
+
+; using it to test. 
+(define (add-stream n stream)
+   (cond ((<= n 0) '())
+        ((stream-null? stream) '())
+        (+ n (add-stream (- n 1) (stream-cdr stream)))  
+))
+
+(newline)
+; START WORKING FROM HERE
+(define (list-to-stream lst) ; will turn list to stream 
+  (if (null? lst)
+      the-empty-stream
+      (cons-stream (car lst)             
+                   (list-to-stream (cdr lst))))) 
+
+(define (pow x) ; will take the power of a
+  (expt 10 (- (length x) 1)))
+
+; will turn a number, like 783, into a list like '(7 8 3)
+(define (integer->list number) ; this could be easily changed because of the map. 
+   (map (lambda (number) (- (char->integer number) 48))
+         (string->list (number->string number))))
+
+;OK
+(define (next-alist a-list a m strm) 
+  (integer->list (+ (* 10 a) (* m (stream-car (list-to-stream strm))))))
+;(let ((new-a-list (integer->list (+ (* 10 a) (* m (stream-car (list-to-stream strm)))))))
+
+
+; if the old list is greater than or equal in length
+; to the newer list, then a zero is prepended to new list.
+(define (prepend new-list old-list)
+  (cond ((> (length old-list) (length new-list))
+            (append '(0) new-list))
+        ((equal? (length old-list) (length new-list))
+            (append '(0) new-list))
+        ; if no prepend is needed then append
+        ; the empty list to the newer list. 
+        ((append '() new-list)))) 
+
+  
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define (action a a-list m strm)
+  (let ((a-power (pow a-list))) ; how will this change
+    (cond ((equal? the-empty-stream strm) ; if the stream is empty
+           (cons-stream (car a-list) (list-to-stream (cdr a-list))))
+          ((and (> (length a-list) 0) (< (+ m (modulo a a-power)) a-power))
+           ;PRODUCE!
+           ;the car of list will be in output stream
+           ; call action recursively with new
+         
+           ;(cons-stream  
+           ; (newline)
+           ; (display "produce")
+           ; (newline)
+           ; (display "power of a ")
+           ; (display a-power)        
+           ; (newline)
+           ; (display "produce a-list")
+           ; (newline)
+           ; (display a-list)
+           ; (newline)
+       
+           (cons-stream (car a-list) (action (modulo a a-power)
+                                             (cdr a-list) m strm)) ; this is somewhat working. 
+           )
+        
+          ; CONSUME!
+          (else
+           ; a - return it changed with equation done
+           ; (a-list) - prepend 0 when needed. need to put in function 
+           ; (display (+ (* 10 a) (* m (cadr a-list)))) ; 8526
+        
+           (newline)
+           (display "consume")
+           (newline)
+           ;(display (* m (stream-car (list-to-stream strm)))) ; 696
+           (display "power of a ")
+           (display a-power)          
+           (newline)      
+           (display "old a-list: ")
+           (display a-list) ;VERY HELPFUL SEE HOW IT CHANGES
+           (newline)
+           ;; IMPORTANT CHECK FOR EMPTY STRM.
+           ; a_2 will represent changed a value after consume
+        
+           ; checking here that the input stream is not empty
+           ;(if (not (equal? the-empty-stream strm))             
+        
+           (let ((a_2 (+ (* 10 a) (* m (stream-car (list-to-stream strm)))))) 
+             ;(let ((new-a-list (integer->list (+ (* 10 a) (* m (stream-car (list-to-stream strm))))))) ; KEEP till end
+             (display "new a-list: ") ; KEEP
+             ;(display new-a-list) ; KEEP - prepend zero
+             (display (next-alist a-list a m strm)) ;function works
+          
+             (newline)
+             ;(display-n (stream-cdr strm) 2)
+             (let ((list2 (next-alist a-list a m strm)))
+       
+               (display "display consume new list: ")      
+       
+               ;(newline)
+           
+               (let ((newer-list (prepend list2 a-list))) ; prepend here if needed
+                 (display newer-list)
+                 (newline)
+                 (newline)
+       
+                 (action a_2 newer-list m (stream-cdr strm)))))))))
+
+(define (mult-stream m strm) 
+ ; need if/else for checking empty list '() for a. If not program breaks. 
+ ;(let ((a (* m (stream-car (list-to-stream strm))))) ; need to check for empty
+ ;(let ((a (stream-car (list-to-stream strm))))
+ ;(let ((a-power (pow (integer->list a)))) ; power of a number
+ ;(let ((a-list (integer->list a))) ; this is the a-list
+ (let ((str (list-to-stream strm))) ; turning the list into a stream
+   
+; (display "this is a: ") ; got 783
+; (display a)
+; (newline)
+; (display "power of a: ")
+; (display a-power)
+; (newline)
+; (display "This is a-list: ")
+; (display a-list)
+; (newline)
+;(length a-list) ; testing the legnth of a-list
+; (display (modulo a a-power))
+; (newline)
+;(* m (stream-car (list-to-stream strm)))
+
+;if/else
+;if stream is empty, then action something. 
+
+   
+(action 0 '() m str)))
+
+;function to add 89 to each member of the stream
+(display-n (mult-stream 87 '(9 8 7 4 3 6 9 1 7)) 100)
+
+; to view stream up to n number
+;(display-n (list-to-stream '(9 8 7 4 3 6 9 1 7)) 3) ; excellent!
+(newline)
+
+(define (take x y)
+(+ x y))
+
+;(display (add-stream 5 (list-to-stream '(9 8 7 4 3 6 9 1 7))))
